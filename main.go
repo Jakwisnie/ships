@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"github.com/fatih/color"
 	gui "github.com/grupawp/warships-lightgui/v2"
 	"github.com/lxn/walk"
@@ -68,8 +70,8 @@ func main() {
 	cfg.RulerTextColor = color.BgYellow
 	board := gui.New(cfg)
 
-	var textPlayer, textTimer, textEnemy, textStatus, fireLocation, textView4 *walk.TextEdit
-	var fireButton, startButton *walk.PushButton
+	var textPlayer, textTimer, textEnemy, textStatus, fireLocation, textView4, textLobby *walk.TextEdit
+	var fireButton, startButton, lobbyButton, lobbyWindowButton *walk.PushButton
 	var checkBox *walk.CheckBox
 
 	onClick2 := func() {
@@ -84,6 +86,8 @@ func main() {
 		data = initGame(client, bodyText)
 		startButton.SetVisible(false)
 		checkBox.SetVisible(false)
+		lobbyWindowButton.SetVisible(false)
+
 		coords := Board(client, data)
 		err2 := board.Import(coords)
 		if err2 != nil {
@@ -144,6 +148,83 @@ func main() {
 		board.Display()
 
 	}
+	onClickLobby := func() {
+		url := "https://go-pjatk-server.fly.dev/api/lobby"
+		r, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			log.Println("Error:", err)
+		}
+		resp, err := client.Do(r)
+		if err != nil {
+			panic(err)
+		}
+		var jsonData []map[string]interface{}
+		err = json.NewDecoder(resp.Body).Decode(&jsonData)
+		if err != nil {
+			log.Println("Error:", err)
+		}
+		jsonString, err := json.Marshal(jsonData)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		jsonStringLiteral := string(jsonString)
+
+		err3 := textLobby.SetText(jsonStringLiteral)
+		if err3 != nil {
+			return
+		}
+	}
+	onClick5 := func() {
+		if _, err := (declarative.MainWindow{
+			Title:  "Lobby",
+			Size:   declarative.Size{Width: 450, Height: 300},
+			Layout: declarative.VBox{},
+			Children: []declarative.Widget{
+				declarative.TextEdit{
+					AssignTo: &textLobby,
+					ReadOnly: true,
+				},
+				declarative.PushButton{
+					AssignTo:  &lobbyButton,
+					Text:      "Show Lobby",
+					OnClicked: onClickLobby,
+				},
+			},
+		}.Run()); err != nil {
+			log.Fatal(err)
+		}
+		go func() {
+			for x := 1; x <= 360; x++ {
+				url := "https://go-pjatk-server.fly.dev/api/lobby"
+				r, err := http.NewRequest("POST", url, bytes.NewBuffer(bodyText))
+				if err != nil {
+					log.Println("Error:", err)
+				}
+				resp, err := client.Do(r)
+				if err != nil {
+					panic(err)
+				}
+				var jsonData map[string]interface{}
+				err = json.NewDecoder(resp.Body).Decode(&jsonData)
+				if err != nil {
+					log.Println("Error:", err)
+				}
+				jsonString, err := json.Marshal(jsonData)
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				jsonStringLiteral := string(jsonString)
+
+				err3 := textLobby.SetText(jsonStringLiteral)
+				if err3 != nil {
+					return
+				}
+				time.Sleep(time.Second)
+			}
+		}()
+	}
 
 	if _, err := (declarative.MainWindow{
 		Title:  "Statki",
@@ -156,17 +237,14 @@ func main() {
 					declarative.TextEdit{
 						AssignTo: &textPlayer,
 						ReadOnly: false,
-						MinSize:  declarative.Size{Width: 150},
 					},
 					declarative.TextEdit{
 						AssignTo: &textTimer,
 						ReadOnly: true,
-						MinSize:  declarative.Size{Width: 150},
 					},
 					declarative.TextEdit{
 						AssignTo: &textEnemy,
 						ReadOnly: true,
-						MinSize:  declarative.Size{Width: 150},
 					},
 				},
 			},
@@ -189,6 +267,11 @@ func main() {
 				AssignTo:  &fireButton,
 				Text:      "Fire",
 				OnClicked: onClick3,
+			},
+			declarative.PushButton{
+				AssignTo:  &lobbyWindowButton,
+				Text:      "ShowLobby",
+				OnClicked: onClick5,
 			},
 			declarative.TextEdit{
 				AssignTo: &fireLocation,
