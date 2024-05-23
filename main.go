@@ -1,8 +1,6 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"github.com/fatih/color"
 	gui "github.com/grupawp/warships-lightgui/v2"
 	"github.com/lxn/walk"
@@ -13,6 +11,17 @@ import (
 	"time"
 )
 
+type Stats struct {
+	Games  int    `json:"games"`
+	Nick   string `json:"nick"`
+	Points int    `json:"points"`
+	Rank   int    `json:"rank"`
+	Wins   int    `json:"wins"`
+}
+
+type StatsResponse struct {
+	Stats []Stats `json:"stats"`
+}
 type Result struct {
 	Status     string   `json:"game_status"`
 	Nick       string   `json:"nick"`
@@ -70,11 +79,22 @@ func main() {
 	cfg.RulerTextColor = color.BgYellow
 	board := gui.New(cfg)
 
-	var textPlayer, textTimer, textEnemy, textStatus, fireLocation, textView4, textLobby *walk.TextEdit
-	var fireButton, startButton, lobbyButton, lobbyWindowButton *walk.PushButton
+	var textPlayer, textTimer, textEnemy, textStatus, fireLocation, textDesc, textView4 *walk.TextEdit
+	var fireButton, leaveButton, startButton, lobbyWindowButton, cordsButton *walk.PushButton
 	var checkBox *walk.CheckBox
-
-	onClick2 := func() {
+	onClickLeave := func() {
+		url := "https://go-pjatk-server.fly.dev/api/game/abandon"
+		r, err := http.NewRequest("DELETE", url, nil)
+		if err != nil {
+			log.Println("Error:", err)
+		}
+		r.Header.Add("X-Auth-Token", data)
+		_, err = client.Do(r)
+		if err != nil {
+			panic(err)
+		}
+	}
+	onClickStart := func() {
 		err := textPlayer.SetReadOnly(true)
 		if err != nil {
 			return
@@ -83,10 +103,15 @@ func main() {
 		if err != nil {
 			return
 		}
+		err = textDesc.SetReadOnly(true)
+		if err != nil {
+			return
+		}
 		data = initGame(client, bodyText)
 		startButton.SetVisible(false)
 		checkBox.SetVisible(false)
 		lobbyWindowButton.SetVisible(false)
+		leaveButton.SetVisible(true)
 
 		coords := Board(client, data)
 		err2 := board.Import(coords)
@@ -132,14 +157,14 @@ func main() {
 		}()
 		board.Display()
 	}
-	onClick4 := func() {
+	onClickHuman := func() {
 		readOnly := textEnemy.ReadOnly()
 		err := textEnemy.SetReadOnly(!readOnly)
 		if err != nil {
 			return
 		}
 	}
-	onClick3 := func() {
+	onClickFire := func() {
 		fireText = Fire(client, fireLocation.Text(), data, board)
 		err := textView4.SetText(fireText)
 		if err != nil {
@@ -148,82 +173,12 @@ func main() {
 		board.Display()
 
 	}
-	onClickLobby := func() {
-		url := "https://go-pjatk-server.fly.dev/api/lobby"
-		r, err := http.NewRequest("GET", url, nil)
-		if err != nil {
-			log.Println("Error:", err)
-		}
-		resp, err := client.Do(r)
-		if err != nil {
-			panic(err)
-		}
-		var jsonData []map[string]interface{}
-		err = json.NewDecoder(resp.Body).Decode(&jsonData)
-		if err != nil {
-			log.Println("Error:", err)
-		}
-		jsonString, err := json.Marshal(jsonData)
-		if err != nil {
-			log.Fatal(err)
-		}
 
-		jsonStringLiteral := string(jsonString)
-
-		err3 := textLobby.SetText(jsonStringLiteral)
-		if err3 != nil {
-			return
-		}
+	onClickShowLobby := func() {
+		lobby(client)
 	}
-	onClick5 := func() {
-		if _, err := (declarative.MainWindow{
-			Title:  "Lobby",
-			Size:   declarative.Size{Width: 450, Height: 300},
-			Layout: declarative.VBox{},
-			Children: []declarative.Widget{
-				declarative.TextEdit{
-					AssignTo: &textLobby,
-					ReadOnly: true,
-				},
-				declarative.PushButton{
-					AssignTo:  &lobbyButton,
-					Text:      "Show Lobby",
-					OnClicked: onClickLobby,
-				},
-			},
-		}.Run()); err != nil {
-			log.Fatal(err)
-		}
-		go func() {
-			for x := 1; x <= 360; x++ {
-				url := "https://go-pjatk-server.fly.dev/api/lobby"
-				r, err := http.NewRequest("POST", url, bytes.NewBuffer(bodyText))
-				if err != nil {
-					log.Println("Error:", err)
-				}
-				resp, err := client.Do(r)
-				if err != nil {
-					panic(err)
-				}
-				var jsonData map[string]interface{}
-				err = json.NewDecoder(resp.Body).Decode(&jsonData)
-				if err != nil {
-					log.Println("Error:", err)
-				}
-				jsonString, err := json.Marshal(jsonData)
-				if err != nil {
-					log.Fatal(err)
-				}
-
-				jsonStringLiteral := string(jsonString)
-
-				err3 := textLobby.SetText(jsonStringLiteral)
-				if err3 != nil {
-					return
-				}
-				time.Sleep(time.Second)
-			}
-		}()
+	onClickCords := func() {
+		shipCords()
 	}
 
 	if _, err := (declarative.MainWindow{
@@ -231,6 +186,11 @@ func main() {
 		Size:   declarative.Size{Width: 450, Height: 300},
 		Layout: declarative.VBox{},
 		Children: []declarative.Widget{
+			declarative.PushButton{
+				AssignTo:  &cordsButton,
+				Text:      "Cords",
+				OnClicked: onClickCords,
+			},
 			declarative.Composite{
 				Layout: declarative.HBox{},
 				Children: []declarative.Widget{
@@ -251,7 +211,11 @@ func main() {
 			declarative.CheckBox{
 				AssignTo:  &checkBox,
 				Text:      "Gra z człowiekiem?",
-				OnClicked: onClick4,
+				OnClicked: onClickHuman,
+			},
+			declarative.TextEdit{
+				AssignTo: &textDesc,
+				ReadOnly: false,
 			},
 			declarative.TextEdit{
 				AssignTo: &textStatus,
@@ -260,18 +224,18 @@ func main() {
 			declarative.PushButton{
 				AssignTo:  &startButton,
 				Text:      "Start",
-				OnClicked: onClick2,
+				OnClicked: onClickStart,
 			},
 
 			declarative.PushButton{
 				AssignTo:  &fireButton,
 				Text:      "Fire",
-				OnClicked: onClick3,
+				OnClicked: onClickFire,
 			},
 			declarative.PushButton{
 				AssignTo:  &lobbyWindowButton,
 				Text:      "ShowLobby",
-				OnClicked: onClick5,
+				OnClicked: onClickShowLobby,
 			},
 			declarative.TextEdit{
 				AssignTo: &fireLocation,
@@ -280,6 +244,12 @@ func main() {
 			declarative.TextEdit{
 				AssignTo: &textView4,
 				ReadOnly: true,
+			},
+			declarative.PushButton{
+				AssignTo:  &leaveButton,
+				Text:      "Leave",
+				OnClicked: onClickLeave,
+				Visible:   false,
 			},
 		},
 	}.Run()); err != nil {
