@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 )
@@ -14,12 +13,13 @@ func initGame(client *http.Client, bodyText BodyText) string {
 
 	b, err := json.Marshal(bodyText)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return ""
 	}
-	fmt.Println(string(b))
-	r, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(fmt.Sprintf("%v", string(b)))))
+	log.Println(string(b))
+	r, err := http.NewRequest("POST", url, bytes.NewBuffer(b))
 	if err != nil {
+
 		log.Println("Error:", err)
 	}
 	resp, err := client.Do(r)
@@ -28,6 +28,7 @@ func initGame(client *http.Client, bodyText BodyText) string {
 	}
 
 	data := resp.Header.Get("X-Auth-Token")
-	fmt.Println(data)
+	log.Println(resp)
+	log.Println(data)
 	return data
 }
