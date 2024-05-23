@@ -19,6 +19,14 @@ type Stats struct {
 	Wins   int    `json:"wins"`
 }
 
+type BodyText struct {
+	Coords     []string `json:"coords"`
+	Desc       string   `json:"desc"`
+	Nick       string   `json:"nick"`
+	TargetNick string   `json:"target_nick"`
+	WpBot      bool     `json:"wpbot"`
+}
+
 type StatsResponse struct {
 	Stats []Stats `json:"stats"`
 }
@@ -39,36 +47,19 @@ type BoardResult struct {
 }
 
 func main() {
+	var textPlayer, textTimer, textEnemy, textStatus, fireLocation, textDesc, textView4 *walk.TextEdit
+	var fireButton, leaveButton, startButton, lobbyWindowButton, cordsButton *walk.PushButton
+	var checkBox *walk.CheckBox
 	var fireText string
 	client := &http.Client{}
-	var bodyText = []byte(`{
-		 "coords": [
-    "A1",
-    "A3",
-    "B9",
-    "C7",
-    "D1",
-    "D2",
-    "D3",
-    "D4",
-    "D7",
-    "E7",
-    "F1",
-    "F2",
-    "F3",
-    "F5",
-    "G5",
-    "G8",
-    "G9",
-    "I4",
-    "J4",
-    "J8"
-  ],
-	"desc": "Ship game",
-	"nick": "Abuk",
-	"target_nick": "",
-	"wpbot": true
-	}`)
+	bodyText := BodyText{
+		Coords:     make([]string, 20),
+		Desc:       "A ship game",
+		Nick:       "Abuk",
+		TargetNick: "",
+		WpBot:      true,
+	}
+
 	data := ""
 	cfg := gui.NewConfig()
 	cfg.HitChar = '#'
@@ -79,9 +70,6 @@ func main() {
 	cfg.RulerTextColor = color.BgYellow
 	board := gui.New(cfg)
 
-	var textPlayer, textTimer, textEnemy, textStatus, fireLocation, textDesc, textView4 *walk.TextEdit
-	var fireButton, leaveButton, startButton, lobbyWindowButton, cordsButton *walk.PushButton
-	var checkBox *walk.CheckBox
 	onClickLeave := func() {
 		url := "https://go-pjatk-server.fly.dev/api/game/abandon"
 		r, err := http.NewRequest("DELETE", url, nil)
@@ -95,6 +83,11 @@ func main() {
 		}
 	}
 	onClickStart := func() {
+
+		bodyText.Desc = textDesc.Text()
+		bodyText.TargetNick = textEnemy.Text()
+		bodyText.Nick = textPlayer.Text()
+
 		err := textPlayer.SetReadOnly(true)
 		if err != nil {
 			return
@@ -159,6 +152,10 @@ func main() {
 	}
 	onClickHuman := func() {
 		readOnly := textEnemy.ReadOnly()
+		status := bodyText.WpBot
+		if status {
+			bodyText.WpBot = !status
+		}
 		err := textEnemy.SetReadOnly(!readOnly)
 		if err != nil {
 			return
@@ -178,7 +175,7 @@ func main() {
 		lobby(client)
 	}
 	onClickCords := func() {
-		shipCords()
+		shipCords(bodyText)
 	}
 
 	if _, err := (declarative.MainWindow{
