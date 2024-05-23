@@ -54,8 +54,8 @@ func main() {
 	client := &http.Client{}
 	bodyText := BodyText{
 		Coords:     make([]string, 20),
-		Desc:       "A ship game",
-		Nick:       "Abuk",
+		Desc:       "",
+		Nick:       "",
 		TargetNick: "",
 		WpBot:      true,
 	}
