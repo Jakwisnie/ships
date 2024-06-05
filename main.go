@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/fatih/color"
 	gui "github.com/grupawp/warships-lightgui/v2"
 	"github.com/lxn/walk"
@@ -11,44 +12,9 @@ import (
 	"time"
 )
 
-type Stats struct {
-	Games  int    `json:"games"`
-	Nick   string `json:"nick"`
-	Points int    `json:"points"`
-	Rank   int    `json:"rank"`
-	Wins   int    `json:"wins"`
-}
-
-type BodyText struct {
-	Coords     []string `json:"coords"`
-	Desc       string   `json:"desc"`
-	Nick       string   `json:"nick"`
-	TargetNick string   `json:"target_nick"`
-	WpBot      bool     `json:"wpbot"`
-}
-
-type StatsResponse struct {
-	Stats []Stats `json:"stats"`
-}
-type Result struct {
-	Status     string   `json:"game_status"`
-	Nick       string   `json:"nick"`
-	LGS        string   `json:"last_game_status"`
-	OppShots   []string `json:"opp_shots"`
-	Opponent   string   `json:"opponent"`
-	ShouldFire bool     `json:"should_fire"`
-	Timer      int      `json:"timer"`
-}
-type ShootResult struct {
-	Result string `json:"result"`
-}
-type BoardResult struct {
-	Board []string `json:"board"`
-}
-
 func main() {
-	var textPlayer, textTimer, textEnemy, textStatus, fireLocation, textDesc, textView4 *walk.TextEdit
-	var fireButton, leaveButton, startButton, lobbyWindowButton, cordsButton *walk.PushButton
+	var textPlayer, textTimer, textEnemy, textEnemyDesc, textStatus, fireLocation, textDesc, textView4 *walk.TextEdit
+	var fireButton, leaveButton, startButton, restartButton, lobbyWindowButton, cordsButton *walk.PushButton
 	var checkBox *walk.CheckBox
 	var fireText string
 	client := &http.Client{}
@@ -81,6 +47,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
+		restartButton.SetVisible(true)
 	}
 	onClickStart := func() {
 
@@ -97,6 +64,10 @@ func main() {
 			return
 		}
 		err = textDesc.SetReadOnly(true)
+		if err != nil {
+			return
+		}
+		err = textEnemyDesc.SetReadOnly(true)
 		if err != nil {
 			return
 		}
@@ -148,6 +119,28 @@ func main() {
 				time.Sleep(time.Second)
 			}
 		}()
+		time.Sleep(time.Second * 5)
+		url = "https://go-pjatk-server.fly.dev/api/game"
+		req, err = http.NewRequest("GET", url, nil)
+		if err != nil {
+			log.Println("Error:", err)
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			log.Println("Error:", err)
+
+		}
+		var result DescResult
+		err = json.NewDecoder(resp.Body).Decode(&result)
+		if err != nil {
+			log.Println("Error:", err)
+
+		}
+		err = textEnemyDesc.SetText(result.OppDesc)
+		if err != nil {
+			log.Println("Error setting text:", err)
+		}
+
 		board.Display()
 	}
 	onClickHuman := func() {
@@ -170,7 +163,61 @@ func main() {
 		board.Display()
 
 	}
-
+	onClickRestart := func() {
+		err := textPlayer.SetText("")
+		if err != nil {
+			return
+		}
+		err = textTimer.SetText("")
+		if err != nil {
+			return
+		}
+		err = textEnemy.SetText("")
+		if err != nil {
+			return
+		}
+		err = textEnemyDesc.SetText("")
+		if err != nil {
+			return
+		}
+		err = textStatus.SetText("")
+		if err != nil {
+			return
+		}
+		err = fireLocation.SetText("")
+		if err != nil {
+			return
+		}
+		err = textDesc.SetText("")
+		if err != nil {
+			return
+		}
+		err = textView4.SetText("")
+		if err != nil {
+			return
+		}
+		startButton.SetVisible(true)
+		restartButton.SetVisible(false)
+		leaveButton.SetVisible(false)
+		checkBox.SetVisible(true)
+		lobbyWindowButton.SetVisible(true)
+		err = textPlayer.SetReadOnly(false)
+		if err != nil {
+			return
+		}
+		err = textEnemy.SetReadOnly(false)
+		if err != nil {
+			return
+		}
+		err = textDesc.SetReadOnly(false)
+		if err != nil {
+			return
+		}
+		err = textEnemyDesc.SetReadOnly(false)
+		if err != nil {
+			return
+		}
+	}
 	onClickShowLobby := func() {
 		lobby(client)
 	}
@@ -180,74 +227,134 @@ func main() {
 
 	if _, err := (declarative.MainWindow{
 		Title:  "Statki",
-		Size:   declarative.Size{Width: 450, Height: 300},
+		Size:   declarative.Size{Width: 850, Height: 640},
 		Layout: declarative.VBox{},
+
 		Children: []declarative.Widget{
-			declarative.PushButton{
-				AssignTo:  &cordsButton,
-				Text:      "Cords",
-				OnClicked: onClickCords,
-			},
+
 			declarative.Composite{
-				Layout: declarative.HBox{},
+				Layout:        declarative.HBox{Alignment: declarative.AlignHCenterVCenter},
+				StretchFactor: 1,
+				Border:        true,
 				Children: []declarative.Widget{
-					declarative.TextEdit{
-						AssignTo: &textPlayer,
-						ReadOnly: false,
-					},
-					declarative.TextEdit{
-						AssignTo: &textTimer,
-						ReadOnly: true,
-					},
-					declarative.TextEdit{
-						AssignTo: &textEnemy,
-						ReadOnly: true,
-					},
+					declarative.Composite{
+						Layout: declarative.Grid{Columns: 5},
+
+						Children: []declarative.Widget{
+							declarative.PushButton{
+								AssignTo:  &startButton,
+								Text:      "Start",
+								OnClicked: onClickStart,
+							},
+							declarative.PushButton{
+								AssignTo:  &restartButton,
+								Text:      "Restart",
+								OnClicked: onClickRestart,
+								Visible:   false,
+							},
+							declarative.PushButton{
+								AssignTo:  &leaveButton,
+								Text:      "Leave",
+								OnClicked: onClickLeave,
+								Visible:   false,
+							},
+							declarative.PushButton{
+								AssignTo:  &cordsButton,
+								Text:      "Cords",
+								OnClicked: onClickCords,
+							},
+							declarative.PushButton{
+								AssignTo:  &lobbyWindowButton,
+								Text:      "ShowLobby",
+								OnClicked: onClickShowLobby,
+							}}},
+					declarative.Composite{
+						Layout: declarative.Grid{Columns: 2},
+						Border: true,
+						Children: []declarative.Widget{
+							declarative.TextEdit{
+								AssignTo: &fireLocation,
+								ReadOnly: false,
+								MaxSize:  declarative.Size{Width: 150, Height: 25},
+							},
+							declarative.PushButton{
+								AssignTo:  &fireButton,
+								Text:      "Fire",
+								OnClicked: onClickFire,
+							}}},
 				},
 			},
-			declarative.CheckBox{
-				AssignTo:  &checkBox,
-				Text:      "Gra z człowiekiem?",
-				OnClicked: onClickHuman,
-			},
-			declarative.TextEdit{
-				AssignTo: &textDesc,
-				ReadOnly: false,
-			},
-			declarative.TextEdit{
-				AssignTo: &textStatus,
-				ReadOnly: true,
-			},
-			declarative.PushButton{
-				AssignTo:  &startButton,
-				Text:      "Start",
-				OnClicked: onClickStart,
-			},
+			declarative.Composite{
+				Layout:        declarative.HBox{},
+				StretchFactor: 4,
+				Children: []declarative.Widget{
+					declarative.Composite{
+						Layout:        declarative.VBox{},
+						StretchFactor: 1,
+						Border:        true,
+						Children: []declarative.Widget{
+							declarative.TextEdit{
+								AssignTo: &textPlayer,
+								ReadOnly: false,
+							},
+							declarative.TextEdit{
+								AssignTo: &textDesc,
+								ReadOnly: false,
+							}, declarative.VSpacer{MinSize: declarative.Size{
+								Width:  300,
+								Height: 300,
+							}},
+						},
+					},
+					declarative.Composite{
+						Layout:        declarative.VBox{},
+						StretchFactor: 1,
+						Border:        true,
+						Children: []declarative.Widget{
+							declarative.TextEdit{
+								AssignTo: &textTimer,
+								ReadOnly: true,
+							},
 
-			declarative.PushButton{
-				AssignTo:  &fireButton,
-				Text:      "Fire",
-				OnClicked: onClickFire,
-			},
-			declarative.PushButton{
-				AssignTo:  &lobbyWindowButton,
-				Text:      "ShowLobby",
-				OnClicked: onClickShowLobby,
-			},
-			declarative.TextEdit{
-				AssignTo: &fireLocation,
-				ReadOnly: false,
-			},
-			declarative.TextEdit{
-				AssignTo: &textView4,
-				ReadOnly: true,
-			},
-			declarative.PushButton{
-				AssignTo:  &leaveButton,
-				Text:      "Leave",
-				OnClicked: onClickLeave,
-				Visible:   false,
-			},
+							declarative.TextEdit{
+								AssignTo: &textStatus,
+								ReadOnly: true,
+							},
+
+							declarative.TextEdit{
+								AssignTo: &textView4,
+								ReadOnly: true}, declarative.VSpacer{MinSize: declarative.Size{
+								Width:  300,
+								Height: 300,
+							}},
+						},
+					}, declarative.Composite{
+						Layout:        declarative.VBox{},
+						StretchFactor: 1,
+						Border:        true,
+						Children: []declarative.Widget{
+							declarative.TextEdit{
+								AssignTo: &textEnemy,
+								ReadOnly: true,
+							},
+							declarative.TextEdit{
+								AssignTo: &textEnemyDesc,
+								ReadOnly: true,
+							},
+
+							declarative.CheckBox{
+								AssignTo:      &checkBox,
+								Text:          "Human?",
+								OnClicked:     onClickHuman,
+								StretchFactor: 1,
+							},
+							declarative.VSpacer{MinSize: declarative.Size{
+								Width:  300,
+								Height: 300,
+							}},
+						},
+					},
+				}},
 		},
 	}.Run()); err != nil {
 		log.Fatal(err)
