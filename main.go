@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"github.com/fatih/color"
 	gui "github.com/grupawp/warships-lightgui/v2"
 	"github.com/lxn/walk"
@@ -17,6 +16,7 @@ func main() {
 	var fireButton, leaveButton, startButton, restartButton, lobbyWindowButton, cordsButton *walk.PushButton
 	var checkBox *walk.CheckBox
 	var fireText string
+	stop := false
 	client := &http.Client{}
 	bodyText := BodyText{
 		Coords:     make([]string, 20),
@@ -31,7 +31,7 @@ func main() {
 	cfg.HitChar = '#'
 	cfg.MissChar = '&'
 	cfg.MissColor = color.BgCyan
-	cfg.HitColor = color.FgRed
+	cfg.HitColor = color.BgGreen
 	cfg.BorderColor = color.BgRed
 	cfg.RulerTextColor = color.BgYellow
 	board := gui.New(cfg)
@@ -48,6 +48,7 @@ func main() {
 			panic(err)
 		}
 		restartButton.SetVisible(true)
+		stop = true
 	}
 	onClickStart := func() {
 
@@ -76,19 +77,26 @@ func main() {
 		checkBox.SetVisible(false)
 		lobbyWindowButton.SetVisible(false)
 		leaveButton.SetVisible(true)
-
+		stop = false
 		coords := Board(client, data)
 		err2 := board.Import(coords)
 		if err2 != nil {
 		}
-		url := "https://go-pjatk-server.fly.dev/api/game"
+		time.Sleep(time.Second)
+		url := "https://go-pjatk-server.fly.dev/api/game/desc"
 		req, err := http.NewRequest("GET", url, nil)
 		if err != nil {
 			log.Println("Error:", err)
 		}
 		req.Header.Add("X-Auth-Token", data)
+		url2 := "https://go-pjatk-server.fly.dev/api/game"
+		req2, err := http.NewRequest("GET", url2, nil)
+		if err != nil {
+			log.Println("Error:", err)
+		}
+		req2.Header.Add("X-Auth-Token", data)
 		go func() {
-			for x := 1; x <= 360; x++ {
+			for {
 				responseText := Result{
 					Status:     "",
 					Nick:       "",
@@ -98,7 +106,7 @@ func main() {
 					ShouldFire: false,
 					Timer:      0,
 				}
-				responseText = Ask(client, req, board)
+				responseText = Ask(client, req2, board)
 				err := textTimer.SetText(strconv.Itoa(responseText.Timer))
 				if err != nil {
 					log.Println("Error setting text:", err)
@@ -116,30 +124,25 @@ func main() {
 				if err != nil {
 					log.Println("Error setting text:", err)
 				}
+				descResult := DescResult{
+					Desc:     "",
+					Nick:     "",
+					OppDesc:  "",
+					Opponent: "",
+				}
+				descResult = Ask2(client, req, board)
+
+				err = textEnemyDesc.SetText(descResult.OppDesc)
+				if err != nil {
+					log.Println("Error setting text:", err)
+				}
+
 				time.Sleep(time.Second)
+				if stop == true {
+					break
+				}
 			}
 		}()
-		time.Sleep(time.Second * 5)
-		url = "https://go-pjatk-server.fly.dev/api/game"
-		req, err = http.NewRequest("GET", url, nil)
-		if err != nil {
-			log.Println("Error:", err)
-		}
-		resp, err := client.Do(req)
-		if err != nil {
-			log.Println("Error:", err)
-
-		}
-		var result DescResult
-		err = json.NewDecoder(resp.Body).Decode(&result)
-		if err != nil {
-			log.Println("Error:", err)
-
-		}
-		err = textEnemyDesc.SetText(result.OppDesc)
-		if err != nil {
-			log.Println("Error setting text:", err)
-		}
 
 		board.Display()
 	}
@@ -200,12 +203,13 @@ func main() {
 		restartButton.SetVisible(false)
 		leaveButton.SetVisible(false)
 		checkBox.SetVisible(true)
+		checkBox.SetChecked(false)
 		lobbyWindowButton.SetVisible(true)
 		err = textPlayer.SetReadOnly(false)
 		if err != nil {
 			return
 		}
-		err = textEnemy.SetReadOnly(false)
+		err = textEnemy.SetReadOnly(true)
 		if err != nil {
 			return
 		}
@@ -213,7 +217,7 @@ func main() {
 		if err != nil {
 			return
 		}
-		err = textEnemyDesc.SetReadOnly(false)
+		err = textEnemyDesc.SetReadOnly(true)
 		if err != nil {
 			return
 		}

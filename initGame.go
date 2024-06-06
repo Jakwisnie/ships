@@ -24,7 +24,7 @@ func initGame(client *http.Client, bodyText BodyText) string {
 	}
 	resp, err := client.Do(r)
 	if err != nil {
-		panic(err)
+		initGame(client, bodyText)
 	}
 
 	data := resp.Header.Get("X-Auth-Token")

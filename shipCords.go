@@ -87,10 +87,12 @@ func shipCords(text BodyText) {
 
 					declarative.TextEdit{
 						AssignTo: &textFirst4,
+						Text:     "A1",
 						ReadOnly: false,
 					},
 					declarative.TextEdit{
 						AssignTo: &textLast4,
+						Text:     "A4",
 						ReadOnly: false,
 					},
 				},
@@ -104,10 +106,12 @@ func shipCords(text BodyText) {
 
 					declarative.TextEdit{
 						AssignTo: &textFirst31,
+						Text:     "A6",
 						ReadOnly: false,
 					},
 					declarative.TextEdit{
 						AssignTo: &textLast31,
+						Text:     "A8",
 						ReadOnly: false,
 					},
 				},
@@ -121,10 +125,12 @@ func shipCords(text BodyText) {
 
 					declarative.TextEdit{
 						AssignTo: &textFirst32,
+						Text:     "C1",
 						ReadOnly: false,
 					},
 					declarative.TextEdit{
 						AssignTo: &textLast32,
+						Text:     "C3",
 						ReadOnly: false,
 					},
 				},
@@ -138,10 +144,12 @@ func shipCords(text BodyText) {
 
 					declarative.TextEdit{
 						AssignTo: &textFirst21,
+						Text:     "C5",
 						ReadOnly: false,
 					},
 					declarative.TextEdit{
 						AssignTo: &textLast21,
+						Text:     "C6",
 						ReadOnly: false,
 					},
 				},
@@ -155,10 +163,12 @@ func shipCords(text BodyText) {
 
 					declarative.TextEdit{
 						AssignTo: &textFirst22,
+						Text:     "C8",
 						ReadOnly: false,
 					},
 					declarative.TextEdit{
 						AssignTo: &textLast22,
+						Text:     "C9",
 						ReadOnly: false,
 					},
 				},
@@ -173,10 +183,12 @@ func shipCords(text BodyText) {
 
 					declarative.TextEdit{
 						AssignTo: &textFirst23,
+						Text:     "E1",
 						ReadOnly: false,
 					},
 					declarative.TextEdit{
 						AssignTo: &textLast23,
+						Text:     "E2",
 						ReadOnly: false,
 					},
 				},
@@ -185,11 +197,13 @@ func shipCords(text BodyText) {
 				Layout: declarative.HBox{},
 				Children: []declarative.Widget{
 					declarative.TextEdit{
-						Text:     "pierwsza jedynka ",
+						Text: "pierwsza jedynka ",
+
 						ReadOnly: true,
 					},
 					declarative.TextEdit{
 						AssignTo: &text11,
+						Text:     "E4",
 						ReadOnly: false,
 					},
 				},
@@ -203,6 +217,7 @@ func shipCords(text BodyText) {
 					},
 					declarative.TextEdit{
 						AssignTo: &text12,
+						Text:     "E6",
 						ReadOnly: false,
 					},
 				},
@@ -216,6 +231,7 @@ func shipCords(text BodyText) {
 					},
 					declarative.TextEdit{
 						AssignTo: &text13,
+						Text:     "E8",
 						ReadOnly: false,
 					},
 				},
@@ -229,6 +245,7 @@ func shipCords(text BodyText) {
 					},
 					declarative.TextEdit{
 						AssignTo: &text14,
+						Text:     "G1",
 						ReadOnly: false,
 					},
 				},
