@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/fatih/color"
 	gui "github.com/grupawp/warships-lightgui/v2"
 	"github.com/lxn/walk"
@@ -8,14 +9,21 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
+func accuracyToString(accuracy float64) string {
+	return fmt.Sprintf("Accuracy: %.2f%%", accuracy*100)
+}
 func main() {
-	var textPlayer, textTimer, textEnemy, textEnemyDesc, textStatus, fireLocation, textDesc, textView4 *walk.TextEdit
+	var mainWindow *walk.MainWindow
+	var textPlayer, textTimer, textEnemy, textEnemyDesc, textStatus, fireLocation, textDesc, textView4, textEnemyShots, textAccuracy *walk.TextEdit
 	var fireButton, leaveButton, startButton, restartButton, lobbyWindowButton, cordsButton *walk.PushButton
 	var checkBox *walk.CheckBox
 	var fireText string
+	var shotCount = 0
+	var goodShot = 0
 	stop := false
 	client := &http.Client{}
 	bodyText := BodyText{
@@ -95,49 +103,86 @@ func main() {
 			log.Println("Error:", err)
 		}
 		req2.Header.Add("X-Auth-Token", data)
+		responseText := Result{
+			Status:     "",
+			Nick:       "",
+			LGS:        "",
+			OppShots:   nil,
+			Opponent:   "",
+			ShouldFire: false,
+			Timer:      0,
+		}
+		descResult := DescResult{
+			Desc:     "",
+			Nick:     "",
+			OppDesc:  "",
+			Opponent: "",
+		}
 		go func() {
 			for {
-				responseText := Result{
-					Status:     "",
-					Nick:       "",
-					LGS:        "",
-					OppShots:   nil,
-					Opponent:   "",
-					ShouldFire: false,
-					Timer:      0,
-				}
+				time.Sleep(time.Second / 2)
 				responseText = Ask(client, req2, board)
-				err := textTimer.SetText(strconv.Itoa(responseText.Timer))
-				if err != nil {
-					log.Println("Error setting text:", err)
+				var y = responseText.Timer
+				if y != 0 {
+					err := textTimer.SetText(strconv.Itoa(responseText.Timer))
+					if err != nil {
+						log.Println("Error setting text:", err)
+					}
 				}
-
-				err = textEnemy.SetText(responseText.Opponent)
-				if err != nil {
-					log.Println("Error setting text:", err)
+				var z = responseText.Opponent
+				if z != "" {
+					err = textEnemy.SetText(responseText.Opponent)
+					if err != nil {
+						log.Println("Error setting text:", err)
+					}
 				}
-				err = textStatus.SetText(responseText.Status)
-				if err != nil {
-					log.Println("Error setting text:", err)
+				z = ""
+				z = responseText.Status
+				if z != "" {
+					err = textEnemy.SetText(responseText.Status)
+					if err != nil {
+						log.Println("Error setting text:", err)
+					}
 				}
-				err = textPlayer.SetText(responseText.Nick)
-				if err != nil {
-					log.Println("Error setting text:", err)
+				z = ""
+				z = responseText.Nick
+				if z != "" {
+					err = textEnemy.SetText(responseText.Nick)
+					if err != nil {
+						log.Println("Error setting text:", err)
+					}
 				}
-				descResult := DescResult{
-					Desc:     "",
-					Nick:     "",
-					OppDesc:  "",
-					Opponent: "",
+				z = ""
+				z = responseText.Opponent
+				if z != "" {
+					err = textEnemy.SetText(responseText.Opponent)
+					if err != nil {
+						log.Println("Error setting text:", err)
+					}
 				}
+				z = descResult.OppDesc
 				descResult = Ask2(client, req, board)
-
-				err = textEnemyDesc.SetText(descResult.OppDesc)
-				if err != nil {
-					log.Println("Error setting text:", err)
+				if z != "" {
+					err = textEnemyDesc.SetText(strings.Join(responseText.OppShots, ","))
+					if err != nil {
+						log.Println("Error setting text:", err)
+					}
+				}
+				z = ""
+				z = descResult.OppDesc
+				descResult = Ask2(client, req, board)
+				if z != "" {
+					err = textEnemyDesc.SetText(descResult.OppDesc)
+					if err != nil {
+						log.Println("Error setting text:", err)
+					}
 				}
 
-				time.Sleep(time.Second)
+				err2 := mainWindow.Invalidate()
+				if err2 != nil {
+					return
+				}
+
 				if stop == true {
 					break
 				}
@@ -161,6 +206,17 @@ func main() {
 		fireText = Fire(client, fireLocation.Text(), data, board)
 		err := textView4.SetText(fireText)
 		if err != nil {
+			return
+		}
+		shotCount = shotCount + 1
+
+		if fireText == "hit" || fireText == "sink" {
+			goodShot = goodShot + 1
+		}
+		accuracy := float64(goodShot) / float64(shotCount)
+		accuracyStr := accuracyToString(accuracy)
+		err2 := textAccuracy.SetText(accuracyStr)
+		if err2 != nil {
 			return
 		}
 		board.Display()
@@ -230,12 +286,13 @@ func main() {
 	}
 
 	if _, err := (declarative.MainWindow{
-		Title:  "Statki",
-		Size:   declarative.Size{Width: 850, Height: 640},
-		Layout: declarative.VBox{},
+		AssignTo: &mainWindow,
+		Title:    "Statki",
+		Size:     declarative.Size{Width: 850, Height: 640},
+		Layout:   declarative.VBox{},
 
 		Children: []declarative.Widget{
-
+			//Top place
 			declarative.Composite{
 				Layout:        declarative.HBox{Alignment: declarative.AlignHCenterVCenter},
 				StretchFactor: 1,
@@ -288,10 +345,13 @@ func main() {
 							}}},
 				},
 			},
+			//Mid and under place
 			declarative.Composite{
-				Layout:        declarative.HBox{},
+				Layout: declarative.HBox{},
+
 				StretchFactor: 4,
 				Children: []declarative.Widget{
+					//player text
 					declarative.Composite{
 						Layout:        declarative.VBox{},
 						StretchFactor: 1,
@@ -304,12 +364,16 @@ func main() {
 							declarative.TextEdit{
 								AssignTo: &textDesc,
 								ReadOnly: false,
-							}, declarative.VSpacer{MinSize: declarative.Size{
+							}, declarative.TextEdit{
+								AssignTo: &textAccuracy,
+								ReadOnly: true},
+							declarative.VSpacer{MinSize: declarative.Size{
 								Width:  300,
 								Height: 300,
 							}},
 						},
 					},
+					//mid text
 					declarative.Composite{
 						Layout:        declarative.VBox{},
 						StretchFactor: 1,
@@ -327,11 +391,14 @@ func main() {
 
 							declarative.TextEdit{
 								AssignTo: &textView4,
-								ReadOnly: true}, declarative.VSpacer{MinSize: declarative.Size{
+								ReadOnly: true},
+
+							declarative.VSpacer{MinSize: declarative.Size{
 								Width:  300,
 								Height: 300,
 							}},
 						},
+						//enemy text
 					}, declarative.Composite{
 						Layout:        declarative.VBox{},
 						StretchFactor: 1,
@@ -345,7 +412,10 @@ func main() {
 								AssignTo: &textEnemyDesc,
 								ReadOnly: true,
 							},
-
+							declarative.TextEdit{
+								AssignTo: &textEnemyShots,
+								ReadOnly: true,
+							},
 							declarative.CheckBox{
 								AssignTo:      &checkBox,
 								Text:          "Human?",
