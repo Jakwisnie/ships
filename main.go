@@ -18,12 +18,15 @@ func accuracyToString(accuracy float64) string {
 }
 func main() {
 	var mainWindow *walk.MainWindow
+	var customWidget, customWidget2 *CustomWidget
 	var textPlayer, textTimer, textEnemy, textEnemyDesc, textStatus, fireLocation, textDesc, textView4, textEnemyShots, textAccuracy *walk.TextEdit
 	var fireButton, leaveButton, startButton, restartButton, lobbyWindowButton, cordsButton *walk.PushButton
 	var checkBox *walk.CheckBox
 	var fireText string
 	var shotCount = 0
 	var goodShot = 0
+	var red = walk.RGB(255, 0, 0)
+	var green = walk.RGB(0, 255, 0)
 	stop := false
 	client := &http.Client{}
 	bodyText := BodyText{
@@ -32,6 +35,12 @@ func main() {
 		Nick:       "",
 		TargetNick: "",
 		WpBot:      true,
+	}
+	customWidget = &CustomWidget{
+		colors: make(map[string]walk.Color),
+	}
+	customWidget2 = &CustomWidget{
+		colors: make(map[string]walk.Color),
 	}
 
 	data := ""
@@ -43,7 +52,6 @@ func main() {
 	cfg.BorderColor = color.BgRed
 	cfg.RulerTextColor = color.BgYellow
 	board := gui.New(cfg)
-
 	onClickLeave := func() {
 		url := "https://go-pjatk-server.fly.dev/api/game/abandon"
 		r, err := http.NewRequest("DELETE", url, nil)
@@ -57,6 +65,11 @@ func main() {
 		}
 		restartButton.SetVisible(true)
 		stop = true
+		time.Sleep(time.Second / 2)
+		err2 := mainWindow.Invalidate()
+		if err2 != nil {
+			return
+		}
 	}
 	onClickStart := func() {
 
@@ -90,7 +103,6 @@ func main() {
 		err2 := board.Import(coords)
 		if err2 != nil {
 		}
-		time.Sleep(time.Second)
 		url := "https://go-pjatk-server.fly.dev/api/game/desc"
 		req, err := http.NewRequest("GET", url, nil)
 		if err != nil {
@@ -139,7 +151,7 @@ func main() {
 				z = ""
 				z = responseText.Status
 				if z != "" {
-					err = textEnemy.SetText(responseText.Status)
+					err = textStatus.SetText(responseText.Status)
 					if err != nil {
 						log.Println("Error setting text:", err)
 					}
@@ -147,7 +159,7 @@ func main() {
 				z = ""
 				z = responseText.Nick
 				if z != "" {
-					err = textEnemy.SetText(responseText.Nick)
+					err = textPlayer.SetText(responseText.Nick)
 					if err != nil {
 						log.Println("Error setting text:", err)
 					}
@@ -160,27 +172,23 @@ func main() {
 						log.Println("Error setting text:", err)
 					}
 				}
-				z = descResult.OppDesc
-				descResult = Ask2(client, req, board)
-				if z != "" {
-					err = textEnemyDesc.SetText(strings.Join(responseText.OppShots, ","))
-					if err != nil {
-						log.Println("Error setting text:", err)
-					}
-				}
 				z = ""
-				z = descResult.OppDesc
-				descResult = Ask2(client, req, board)
+				z = strings.Join(responseText.OppShots, ",")
 				if z != "" {
-					err = textEnemyDesc.SetText(descResult.OppDesc)
+					err = textEnemyShots.SetText(strings.Join(responseText.OppShots, ","))
 					if err != nil {
 						log.Println("Error setting text:", err)
 					}
 				}
 
-				err2 := mainWindow.Invalidate()
-				if err2 != nil {
-					return
+				descResult = Ask2(client, req, board)
+				time.Sleep(time.Second / 2)
+				z = descResult.OppDesc
+				if z != "" {
+					err = textEnemyDesc.SetText(descResult.OppDesc)
+					if err != nil {
+						log.Println("Error setting text:", err)
+					}
 				}
 
 				if stop == true {
@@ -189,7 +197,6 @@ func main() {
 			}
 		}()
 
-		board.Display()
 	}
 	onClickHuman := func() {
 		readOnly := textEnemy.ReadOnly()
@@ -203,15 +210,19 @@ func main() {
 		}
 	}
 	onClickFire := func() {
-		fireText = Fire(client, fireLocation.Text(), data, board)
+		fireText = Fire(client, strings.ToUpper(fireLocation.Text()), data, board)
 		err := textView4.SetText(fireText)
+
 		if err != nil {
 			return
 		}
 		shotCount = shotCount + 1
 
-		if fireText == "hit" || fireText == "sink" {
+		if fireText == "hit" || fireText == "sunk" {
 			goodShot = goodShot + 1
+			customWidget2.colors[strings.ToUpper(fireLocation.Text())] = green
+		} else {
+			customWidget2.colors[strings.ToUpper(fireLocation.Text())] = red
 		}
 		accuracy := float64(goodShot) / float64(shotCount)
 		accuracyStr := accuracyToString(accuracy)
@@ -219,10 +230,22 @@ func main() {
 		if err2 != nil {
 			return
 		}
-		board.Display()
 
+		arr := strings.Split(textEnemyShots.Text(), ",")
+		for _, cord := range arr {
+			customWidget.colors[cord] = walk.RGB(255, 0, 0)
+		}
+		err4 := customWidget.Invalidate()
+		if err4 != nil {
+			return
+		}
+		err3 := customWidget2.Invalidate()
+		if err3 != nil {
+			return
+		}
 	}
 	onClickRestart := func() {
+		customWidget.colors = make(map[string]walk.Color)
 		err := textPlayer.SetText("")
 		if err != nil {
 			return
@@ -277,18 +300,23 @@ func main() {
 		if err != nil {
 			return
 		}
+		time.Sleep(time.Second / 2)
+		err2 := mainWindow.Invalidate()
+		if err2 != nil {
+			return
+		}
 	}
 	onClickShowLobby := func() {
 		lobby(client)
 	}
 	onClickCords := func() {
-		shipCords(bodyText)
+		shipCords(bodyText, customWidget)
 	}
 
 	if _, err := (declarative.MainWindow{
 		AssignTo: &mainWindow,
 		Title:    "Statki",
-		Size:     declarative.Size{Width: 850, Height: 640},
+		Size:     declarative.Size{Width: 850, Height: 850},
 		Layout:   declarative.VBox{},
 
 		Children: []declarative.Widget{
@@ -345,7 +373,7 @@ func main() {
 							}}},
 				},
 			},
-			//Mid and under place
+			//Remaings
 			declarative.Composite{
 				Layout: declarative.HBox{},
 
@@ -366,7 +394,8 @@ func main() {
 								ReadOnly: false,
 							}, declarative.TextEdit{
 								AssignTo: &textAccuracy,
-								ReadOnly: true},
+								ReadOnly: true,
+							},
 							declarative.VSpacer{MinSize: declarative.Size{
 								Width:  300,
 								Height: 300,
@@ -380,22 +409,38 @@ func main() {
 						Border:        true,
 						Children: []declarative.Widget{
 							declarative.TextEdit{
-								AssignTo: &textTimer,
-								ReadOnly: true,
+								AssignTo:      &textTimer,
+								ReadOnly:      true,
+								StretchFactor: 1,
 							},
 
 							declarative.TextEdit{
-								AssignTo: &textStatus,
-								ReadOnly: true,
+								AssignTo:      &textStatus,
+								ReadOnly:      true,
+								StretchFactor: 1,
 							},
 
 							declarative.TextEdit{
-								AssignTo: &textView4,
-								ReadOnly: true},
+								AssignTo:      &textView4,
+								ReadOnly:      true,
+								StretchFactor: 1},
+							declarative.Composite{
+								Layout:        declarative.HBox{},
+								StretchFactor: 8,
+								Border:        true,
 
+								Children: []declarative.Widget{
+									declarative.CustomWidget{
+										AssignTo: &customWidget.CustomWidget,
+										Paint:    customWidget.DrawFull,
+									},
+									declarative.CustomWidget{
+										AssignTo: &customWidget2.CustomWidget,
+										Paint:    customWidget2.DrawFull,
+									},
+								}},
 							declarative.VSpacer{MinSize: declarative.Size{
-								Width:  300,
-								Height: 300,
+								Width: 550,
 							}},
 						},
 						//enemy text

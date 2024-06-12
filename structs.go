@@ -1,5 +1,7 @@
 package main
 
+import "github.com/lxn/walk"
+
 type Stats struct {
 	Games  int    `json:"games"`
 	Nick   string `json:"nick"`
@@ -40,4 +42,9 @@ type DescResult struct {
 	Nick     string `json:"nick"`
 	OppDesc  string `json:"opp_desc"`
 	Opponent string `json:"opponent"`
+}
+
+type CustomWidget struct {
+	*walk.CustomWidget
+	colors map[string]walk.Color
 }

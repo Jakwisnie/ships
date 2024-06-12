@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func shipCords(text BodyText) {
+func shipCords(text BodyText, widget *CustomWidget) {
 	var cords []string = make([]string, 20)
 	var textCords, textFirst4, textLast4, textFirst31, textLast31, textFirst32, textLast32, textFirst21, textLast21, textFirst22, textLast22, textFirst23, textLast23, text11, text12, text13, text14 *walk.TextEdit
 	var cordsButton *walk.PushButton
@@ -64,6 +64,9 @@ func shipCords(text BodyText) {
 		cords[17] = text12.Text()
 		cords[18] = text13.Text()
 		cords[19] = text14.Text()
+		for _, cord := range cords {
+			widget.colors[cord] = walk.RGB(0, 0, 255)
+		}
 		copy(text.Coords[:], cords[:])
 		err2 := textCords.SetText(strings.Join(cords, ", "))
 		if err2 != nil {
