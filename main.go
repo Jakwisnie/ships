@@ -190,7 +190,14 @@ func main() {
 						log.Println("Error setting text:", err)
 					}
 				}
-
+				arr := strings.Split(textEnemyShots.Text(), ",")
+				for _, cord := range arr {
+					customWidget.colors[cord] = walk.RGB(255, 0, 0)
+				}
+				err4 := customWidget.Invalidate()
+				if err4 != nil {
+					return
+				}
 				if stop == true {
 					break
 				}
@@ -231,14 +238,6 @@ func main() {
 			return
 		}
 
-		arr := strings.Split(textEnemyShots.Text(), ",")
-		for _, cord := range arr {
-			customWidget.colors[cord] = walk.RGB(255, 0, 0)
-		}
-		err4 := customWidget.Invalidate()
-		if err4 != nil {
-			return
-		}
 		err3 := customWidget2.Invalidate()
 		if err3 != nil {
 			return
