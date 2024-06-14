@@ -9,6 +9,18 @@ import (
 	"strings"
 )
 
+func getNext(char byte) byte {
+	if char == 'j' {
+		return 'a'
+	} else if char == 'J' {
+		return 'A'
+	} else if (char >= 'a' && char < 'j') || (char >= 'A' && char < 'J') {
+		return char + 1
+	} else {
+		return char
+	}
+}
+
 func shipCords(text BodyText, widget *CustomWidget) {
 	var cords []string = make([]string, 20)
 	var textCords, textFirst4, textLast4, textFirst31, textLast31, textFirst32, textLast32, textFirst21, textLast21, textFirst22, textLast22, textFirst23, textLast23, text11, text12, text13, text14 *walk.TextEdit
@@ -39,16 +51,30 @@ func shipCords(text BodyText, widget *CustomWidget) {
 		}
 
 		cords[0] = textFirst4.Text()
-		cords[1] = bigLetter + strconv.Itoa(bigNumber+1)
-		cords[2] = bigLetter + strconv.Itoa(bigNumber+2)
+		if string(textFirst4.Text()[1]) != string(textLast4.Text()[1]) {
+			cords[1] = bigLetter + strconv.Itoa(bigNumber+1)
+			cords[2] = bigLetter + strconv.Itoa(bigNumber+2)
+
+		} else {
+			cords[1] = string(getNext(textFirst4.Text()[0])) + strconv.Itoa(bigNumber)
+			cords[2] = string(getNext(getNext(textFirst4.Text()[0]))) + strconv.Itoa(bigNumber)
+		}
 		cords[3] = textLast4.Text()
 
 		cords[4] = textFirst31.Text()
-		cords[5] = textSecond31 + strconv.Itoa(secondNumber31+1)
+		if string(textFirst31.Text()[1]) != string(textLast31.Text()[1]) {
+			cords[5] = textSecond31 + strconv.Itoa(secondNumber31+1)
+		} else {
+			cords[5] = string(getNext(textFirst31.Text()[0])) + strconv.Itoa(secondNumber31)
+		}
 		cords[6] = textLast31.Text()
 
 		cords[7] = textFirst32.Text()
-		cords[8] = textSecond32 + strconv.Itoa(secondNumber32+1)
+		if string(textFirst32.Text()[1]) != string(textLast32.Text()[1]) {
+			cords[8] = textSecond32 + strconv.Itoa(secondNumber32+1)
+		} else {
+			cords[8] = string(getNext(textFirst32.Text()[0])) + strconv.Itoa(secondNumber32+1)
+		}
 		cords[9] = textLast32.Text()
 
 		cords[10] = textFirst21.Text()

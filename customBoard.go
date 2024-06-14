@@ -12,6 +12,7 @@ func NewCustomWidget() *CustomWidget {
 }
 
 func (cw *CustomWidget) DrawFull(canvas *walk.Canvas, updateBounds walk.Rectangle) error {
+
 	cellSize := 25
 	boardSize := 10
 
@@ -38,7 +39,7 @@ func (cw *CustomWidget) DrawFull(canvas *walk.Canvas, updateBounds walk.Rectangl
 			}
 			defer brush.Dispose()
 
-			if err := canvas.FillRectangle(brush, rect); err != nil {
+			if err := canvas.FillRectanglePixels(brush, rect); err != nil {
 				return err
 			}
 
@@ -46,8 +47,9 @@ func (cw *CustomWidget) DrawFull(canvas *walk.Canvas, updateBounds walk.Rectangl
 			if err != nil {
 				return err
 			}
+
 			defer pen.Dispose()
-			if err := canvas.DrawRectangle(pen, rect); err != nil {
+			if err := canvas.DrawRectanglePixels(pen, rect); err != nil {
 				return err
 			}
 		}

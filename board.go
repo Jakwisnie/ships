@@ -7,26 +7,27 @@ import (
 	"net/http"
 )
 
-func Board(client *http.Client, data2 string) []string {
+func Board(client *http.Client, dataRaw string) []string {
 
 	url := "https://go-pjatk-server.fly.dev/api/game/board"
-	r, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Println("Error:", err)
 	}
-	r.Header.Add("X-Auth-Token", data2)
-	resp, err := client.Do(r)
+	req.Header.Add("X-Auth-Token", dataRaw)
+	resp, err := client.Do(req)
 	if err != nil {
-		panic(err)
+		Board(client, dataRaw)
 	}
+
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
-
 		}
 	}(resp.Body)
 
 	var result BoardResult
+
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	if err != nil {
 		log.Println("Error:", err)
