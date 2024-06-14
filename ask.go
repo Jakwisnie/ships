@@ -39,3 +39,39 @@ func Ask2(client *http.Client, req *http.Request, board *gui.Board) DescResult {
 
 	return descResult
 }
+func AskLB(client *http.Client) LobbyResponse {
+	url := "https://go-pjatk-server.fly.dev/api/lobby"
+	r, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		log.Println("Error:", err)
+	}
+	resp, err := client.Do(r)
+	if err != nil {
+		panic(err)
+	}
+	var jsonData LobbyResponse
+	err = json.NewDecoder(resp.Body).Decode(&jsonData)
+	if err != nil {
+		log.Println("Error:", err)
+	}
+	return jsonData
+}
+func AskHS(client *http.Client) StatsResponse {
+	url := "https://go-pjatk-server.fly.dev/api/stats"
+	r, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		log.Println("Error:", err)
+	}
+	resp, err := client.Do(r)
+	if err != nil {
+		panic(err)
+	}
+
+	var statsResponse StatsResponse
+	err = json.NewDecoder(resp.Body).Decode(&statsResponse)
+	if err != nil {
+		log.Println("Error:", err)
+	}
+
+	return statsResponse
+}
