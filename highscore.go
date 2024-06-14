@@ -8,32 +8,19 @@ import (
 	"net/http"
 )
 
-func highscore(client *http.Client) {
+func Highscore(client *http.Client) {
+
 	var textLobby *walk.TextEdit
 	var lobbyButton *walk.PushButton
-	highscoreTake := func() {
-		url := "https://go-pjatk-server.fly.dev/api/stats"
-		r, err := http.NewRequest("GET", url, nil)
-		if err != nil {
-			log.Println("Error:", err)
-		}
-		resp, err := client.Do(r)
-		if err != nil {
-			panic(err)
-		}
 
-		var statsResponse StatsResponse
-		err = json.NewDecoder(resp.Body).Decode(&statsResponse)
-		if err != nil {
-			log.Println("Error:", err)
-		}
-		jsonString, err := json.Marshal(statsResponse)
+	highscoreTake := func() {
+
+		statsResponse := AskHS(client)
+		jsonS, err := json.Marshal(statsResponse)
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		jsonStringLiteral := string(jsonString)
-
+		jsonStringLiteral := string(jsonS)
 		err3 := textLobby.SetText(jsonStringLiteral)
 		if err3 != nil {
 			return
@@ -51,7 +38,7 @@ func highscore(client *http.Client) {
 			},
 			declarative.PushButton{
 				AssignTo:  &lobbyButton,
-				Text:      "Show highscore",
+				Text:      "Show Highscore",
 				OnClicked: highscoreTake,
 			},
 		},

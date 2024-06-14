@@ -21,6 +21,15 @@ type BodyText struct {
 type StatsResponse struct {
 	Stats []Stats `json:"stats"`
 }
+type Lobby struct {
+	GameStatus string `json:"game_status"`
+	Nick       string `json:"nick"`
+}
+
+type LobbyResponse struct {
+	Lobby []Lobby `json:"lobby"`
+}
+
 type Result struct {
 	Status     string   `json:"game_status"`
 	Nick       string   `json:"nick"`
