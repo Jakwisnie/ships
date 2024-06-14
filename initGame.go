@@ -8,7 +8,6 @@ import (
 )
 
 func initGame(client *http.Client, bodyText BodyText) string {
-	log.Println("init initgame")
 	url := "https://go-pjatk-server.fly.dev/api/game"
 
 	b, err := json.Marshal(bodyText)
@@ -28,7 +27,5 @@ func initGame(client *http.Client, bodyText BodyText) string {
 	}
 
 	data := resp.Header.Get("X-Auth-Token")
-	log.Println(resp)
-	log.Println(data)
 	return data
 }

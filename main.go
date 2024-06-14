@@ -19,7 +19,7 @@ func accuracyToString(accuracy float64) string {
 func main() {
 	var mainWindow *walk.MainWindow
 	var customWidget, customWidget2 *CustomWidget
-	var textPlayer, textTimer, textEnemy, textEnemyDesc, textStatus, fireLocation, textDesc, textView4, textEnemyShots, textAccuracy *walk.TextEdit
+	var textPlayer, textTimer, textShouldFire, textLGS, textEnemy, textEnemyDesc, textStatus, fireLocation, textDesc, textView4, textEnemyShots, textAccuracy *walk.TextEdit
 	var fireButton, leaveButton, startButton, restartButton, lobbyWindowButton, cordsButton *walk.PushButton
 	var checkBox *walk.CheckBox
 	var fireText string
@@ -149,6 +149,20 @@ func main() {
 					}
 				}
 				z = ""
+				if z != "" {
+					err = textLGS.SetText(responseText.LGS)
+					if err != nil {
+						log.Println("Error setting text:", err)
+					}
+				}
+
+				shouldFire := fmt.Sprintf("%t", responseText.ShouldFire)
+				err = textShouldFire.SetText(shouldFire)
+				if err != nil {
+					log.Println("Error setting text:", err)
+				}
+
+				z = ""
 				z = responseText.Status
 				if z != "" {
 					err = textStatus.SetText(responseText.Status)
@@ -198,6 +212,21 @@ func main() {
 				if err4 != nil {
 					return
 				}
+				if textLGS.Text() == "win" || textLGS.Text() == "lose" {
+					if _, err := (declarative.MainWindow{
+						Title:  "Lobby",
+						Size:   declarative.Size{Width: 450, Height: 300},
+						Layout: declarative.VBox{},
+						Children: []declarative.Widget{
+							declarative.TextEdit{
+								AssignTo: &textLGS,
+								ReadOnly: true,
+							},
+						},
+					}.Run()); err != nil {
+						log.Fatal(err)
+					}
+				}
 				if stop == true {
 					break
 				}
@@ -217,30 +246,32 @@ func main() {
 		}
 	}
 	onClickFire := func() {
-		fireText = Fire(client, strings.ToUpper(fireLocation.Text()), data, board)
-		err := textView4.SetText(fireText)
+		if textShouldFire.Text() == "true" {
+			fireText = Fire(client, strings.ToUpper(fireLocation.Text()), data, board)
+			err := textView4.SetText(fireText)
 
-		if err != nil {
-			return
-		}
-		shotCount = shotCount + 1
+			if err != nil {
+				return
+			}
+			shotCount = shotCount + 1
 
-		if fireText == "hit" || fireText == "sunk" {
-			goodShot = goodShot + 1
-			customWidget2.colors[strings.ToUpper(fireLocation.Text())] = green
-		} else {
-			customWidget2.colors[strings.ToUpper(fireLocation.Text())] = red
-		}
-		accuracy := float64(goodShot) / float64(shotCount)
-		accuracyStr := accuracyToString(accuracy)
-		err2 := textAccuracy.SetText(accuracyStr)
-		if err2 != nil {
-			return
-		}
+			if fireText == "hit" || fireText == "sunk" {
+				goodShot = goodShot + 1
+				customWidget2.colors[strings.ToUpper(fireLocation.Text())] = green
+			} else {
+				customWidget2.colors[strings.ToUpper(fireLocation.Text())] = red
+			}
+			accuracy := float64(goodShot) / float64(shotCount)
+			accuracyStr := accuracyToString(accuracy)
+			err2 := textAccuracy.SetText(accuracyStr)
+			if err2 != nil {
+				return
+			}
 
-		err3 := customWidget2.Invalidate()
-		if err3 != nil {
-			return
+			err3 := customWidget2.Invalidate()
+			if err3 != nil {
+				return
+			}
 		}
 	}
 	onClickRestart := func() {
@@ -438,6 +469,10 @@ func main() {
 										Paint:    customWidget2.DrawFull,
 									},
 								}},
+							declarative.TextEdit{
+								AssignTo: &textShouldFire,
+								ReadOnly: true,
+							},
 							declarative.VSpacer{MinSize: declarative.Size{
 								Width: 550,
 							}},
