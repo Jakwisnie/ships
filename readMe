@@ -1,0 +1,4 @@
+To make ships.exe to play without golang interpreter u need to type in terminal go build -ldflags="-H windowsgui"
+
+In ask.go where most of http requests expect initGame and Fire which where in their own files
+
