@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-func Highscore(client *http.Client) {
+func Highscore(client *http.Client, hsWindow *walk.MainWindow) {
 
 	var textLobby *walk.TextEdit
 	var lobbyButton *walk.PushButton
@@ -28,9 +28,10 @@ func Highscore(client *http.Client) {
 	}
 
 	if _, err := (declarative.MainWindow{
-		Title:  "Highscore",
-		Size:   declarative.Size{Width: 450, Height: 300},
-		Layout: declarative.VBox{},
+		Title:    "Highscore",
+		Size:     declarative.Size{Width: 450, Height: 300},
+		AssignTo: &hsWindow,
+		Layout:   declarative.VBox{},
 		Children: []declarative.Widget{
 			declarative.TextEdit{
 				AssignTo: &textLobby,

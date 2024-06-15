@@ -1,27 +1,20 @@
 package main
 
 import (
-	"encoding/json"
 	"github.com/lxn/walk"
 	"github.com/lxn/walk/declarative"
 	"log"
 	"net/http"
 )
 
-func lobby(client *http.Client) {
+func lobby(client *http.Client, lobbyWindow *walk.MainWindow, hsWindow *walk.MainWindow) {
 	var textLobby *walk.TextEdit
 	var lobbyButton, highscoreButton *walk.PushButton
 	onClickHighscore := func() {
-		Highscore(client)
+		Highscore(client, hsWindow)
 	}
 	onClickLobby := func() {
-		jsonData := AskLB(client)
-		jsonString, err := json.Marshal(jsonData)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		jsonStringLiteral := string(jsonString)
+		jsonStringLiteral := AskLB(client)
 
 		err3 := textLobby.SetText(jsonStringLiteral)
 		if err3 != nil {
@@ -29,9 +22,10 @@ func lobby(client *http.Client) {
 		}
 	}
 	if _, err := (declarative.MainWindow{
-		Title:  "Lobby",
-		Size:   declarative.Size{Width: 450, Height: 300},
-		Layout: declarative.VBox{},
+		Title:    "Lobby",
+		Size:     declarative.Size{Width: 450, Height: 300},
+		AssignTo: &lobbyWindow,
+		Layout:   declarative.VBox{},
 		Children: []declarative.Widget{
 			declarative.TextEdit{
 				AssignTo: &textLobby,

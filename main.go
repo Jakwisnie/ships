@@ -17,9 +17,9 @@ func accuracyToString(accuracy float64) string {
 	return fmt.Sprintf("Accuracy: %.2f%%", accuracy*100)
 }
 func main() {
-	var mainWindow *walk.MainWindow
+	var mainWindow, cordsWindow, lobbyWindow, hsWindow *walk.MainWindow
 	var customWidget, customWidget2 *CustomWidget
-	var textPlayer, textTimer, textShouldFire, textLGS, textEnemy, textEnemyDesc, textStatus, fireLocation, textDesc, textView4, textEnemyShots, textAccuracy *walk.TextEdit
+	var textPlayer, textTimer, textShouldFire, textEnemy, textEnemyDesc, textStatus, fireLocation, textDesc, textFireRes, textEnemyShots, textAccuracy *walk.TextEdit
 	var fireButton, leaveButton, startButton, restartButton, lobbyWindowButton, cordsButton *walk.PushButton
 	var checkBox *walk.CheckBox
 	var fireText string
@@ -72,167 +72,137 @@ func main() {
 		}
 	}
 	onClickStart := func() {
+		if textPlayer.Text() != "" && strings.Join(bodyText.Coords, "") != "" {
+			bodyText.Desc = textDesc.Text()
+			bodyText.TargetNick = textEnemy.Text()
+			bodyText.Nick = textPlayer.Text()
 
-		bodyText.Desc = textDesc.Text()
-		bodyText.TargetNick = textEnemy.Text()
-		bodyText.Nick = textPlayer.Text()
-
-		err := textPlayer.SetReadOnly(true)
-		if err != nil {
-			return
-		}
-		err = textEnemy.SetReadOnly(true)
-		if err != nil {
-			return
-		}
-		err = textDesc.SetReadOnly(true)
-		if err != nil {
-			return
-		}
-		err = textEnemyDesc.SetReadOnly(true)
-		if err != nil {
-			return
-		}
-		data = initGame(client, bodyText)
-		startButton.SetVisible(false)
-		checkBox.SetVisible(false)
-		lobbyWindowButton.SetVisible(false)
-		leaveButton.SetVisible(true)
-		stop = false
-		coords := Board(client, data)
-		err2 := board.Import(coords)
-		if err2 != nil {
-		}
-		url := "https://go-pjatk-server.fly.dev/api/game/desc"
-		req, err := http.NewRequest("GET", url, nil)
-		if err != nil {
-			log.Println("Error:", err)
-		}
-		req.Header.Add("X-Auth-Token", data)
-		url2 := "https://go-pjatk-server.fly.dev/api/game"
-		req2, err := http.NewRequest("GET", url2, nil)
-		if err != nil {
-			log.Println("Error:", err)
-		}
-		req2.Header.Add("X-Auth-Token", data)
-		responseText := Result{
-			Status:     "",
-			Nick:       "",
-			LGS:        "",
-			OppShots:   nil,
-			Opponent:   "",
-			ShouldFire: false,
-			Timer:      0,
-		}
-		descResult := DescResult{
-			Desc:     "",
-			Nick:     "",
-			OppDesc:  "",
-			Opponent: "",
-		}
-		go func() {
-			for {
-				time.Sleep(time.Second / 2)
-				responseText = Ask(client, req2, board)
-				var y = responseText.Timer
-				if y != 0 {
-					err := textTimer.SetText(strconv.Itoa(responseText.Timer))
-					if err != nil {
-						log.Println("Error setting text:", err)
-					}
-				}
-				var z = responseText.Opponent
-				if z != "" {
-					err = textEnemy.SetText(responseText.Opponent)
-					if err != nil {
-						log.Println("Error setting text:", err)
-					}
-				}
-				z = ""
-				if z != "" {
-					err = textLGS.SetText(responseText.LGS)
-					if err != nil {
-						log.Println("Error setting text:", err)
-					}
-				}
-
-				shouldFire := fmt.Sprintf("%t", responseText.ShouldFire)
-				err = textShouldFire.SetText(shouldFire)
-				if err != nil {
-					log.Println("Error setting text:", err)
-				}
-
-				z = ""
-				z = responseText.Status
-				if z != "" {
-					err = textStatus.SetText(responseText.Status)
-					if err != nil {
-						log.Println("Error setting text:", err)
-					}
-				}
-				z = ""
-				z = responseText.Nick
-				if z != "" {
-					err = textPlayer.SetText(responseText.Nick)
-					if err != nil {
-						log.Println("Error setting text:", err)
-					}
-				}
-				z = ""
-				z = responseText.Opponent
-				if z != "" {
-					err = textEnemy.SetText(responseText.Opponent)
-					if err != nil {
-						log.Println("Error setting text:", err)
-					}
-				}
-				z = ""
-				z = strings.Join(responseText.OppShots, ",")
-				if z != "" {
-					err = textEnemyShots.SetText(strings.Join(responseText.OppShots, ","))
-					if err != nil {
-						log.Println("Error setting text:", err)
-					}
-				}
-
-				descResult = Ask2(client, req, board)
-				time.Sleep(time.Second / 2)
-				z = descResult.OppDesc
-				if z != "" {
-					err = textEnemyDesc.SetText(descResult.OppDesc)
-					if err != nil {
-						log.Println("Error setting text:", err)
-					}
-				}
-				arr := strings.Split(textEnemyShots.Text(), ",")
-				for _, cord := range arr {
-					customWidget.colors[cord] = walk.RGB(255, 0, 0)
-				}
-				err4 := customWidget.Invalidate()
-				if err4 != nil {
-					return
-				}
-				if textLGS.Text() == "win" || textLGS.Text() == "lose" {
-					if _, err := (declarative.MainWindow{
-						Title:  "Lobby",
-						Size:   declarative.Size{Width: 450, Height: 300},
-						Layout: declarative.VBox{},
-						Children: []declarative.Widget{
-							declarative.TextEdit{
-								AssignTo: &textLGS,
-								ReadOnly: true,
-							},
-						},
-					}.Run()); err != nil {
-						log.Fatal(err)
-					}
-				}
-				if stop == true {
-					break
-				}
+			err := textPlayer.SetReadOnly(true)
+			if err != nil {
+				return
 			}
-		}()
+			err = textEnemy.SetReadOnly(true)
+			if err != nil {
+				return
+			}
+			err = textDesc.SetReadOnly(true)
+			if err != nil {
+				return
+			}
+			err = textEnemyDesc.SetReadOnly(true)
+			if err != nil {
+				return
+			}
+			data = initGame(client, bodyText)
+			startButton.SetVisible(false)
+			checkBox.SetVisible(false)
+			lobbyWindowButton.SetVisible(false)
+			leaveButton.SetVisible(true)
+			stop = false
+			coords := Board(client, data)
+			err2 := board.Import(coords)
+			if err2 != nil {
+			}
+			url2 := "https://go-pjatk-server.fly.dev/api/game"
+			req2, err := http.NewRequest("GET", url2, nil)
+			if err != nil {
+				log.Println("Error:", err)
+			}
+			req2.Header.Add("X-Auth-Token", data)
+			responseText := Result{
+				Status:     "",
+				Nick:       "",
+				LGS:        "",
+				OppShots:   nil,
+				Opponent:   "",
+				ShouldFire: false,
+				Timer:      0,
+			}
+			descResult := DescResult{
+				Desc:     "",
+				Nick:     "",
+				OppDesc:  "",
+				Opponent: "",
+			}
+			go func() {
+				for {
+					time.Sleep(time.Second / 2)
+					responseText = AskBase(client, board, data)
+					descResult = AskDesc(client, board, data)
+					var y = responseText.Timer
+					if y != 0 {
+						err := textTimer.SetText(strconv.Itoa(responseText.Timer))
+						if err != nil {
+							log.Println("Error setting text:", err)
+						}
+					}
+					var z = responseText.Opponent
+					if z != "" {
+						err = textEnemy.SetText(responseText.Opponent)
+						if err != nil {
+							log.Println("Error setting text:", err)
+						}
+					}
+					shouldFire := fmt.Sprintf("%t", responseText.ShouldFire)
+					err = textShouldFire.SetText(shouldFire)
+					if err != nil {
+						log.Println("Error setting text:", err)
+					}
 
+					z = ""
+					z = responseText.Status
+					if z != "" {
+						err = textStatus.SetText(responseText.Status)
+						if err != nil {
+							log.Println("Error setting text:", err)
+						}
+					}
+					z = ""
+					z = responseText.Nick
+					if z != "" {
+						err = textPlayer.SetText(responseText.Nick)
+						if err != nil {
+							log.Println("Error setting text:", err)
+						}
+					}
+					z = ""
+					z = responseText.Opponent
+					if z != "" {
+						err = textEnemy.SetText(responseText.Opponent)
+						if err != nil {
+							log.Println("Error setting text:", err)
+						}
+					}
+					z = ""
+					z = strings.Join(responseText.OppShots, ",")
+					if z != "" {
+						err = textEnemyShots.SetText(strings.Join(responseText.OppShots, ","))
+						if err != nil {
+							log.Println("Error setting text:", err)
+						}
+					}
+
+					z = descResult.OppDesc
+					if z != "" {
+						err = textEnemyDesc.SetText(descResult.OppDesc)
+						if err != nil {
+							log.Println("Error setting text:", err)
+						}
+					}
+					arr := strings.Split(textEnemyShots.Text(), ",")
+					for _, cord := range arr {
+						customWidget.colors[cord] = walk.RGB(255, 0, 0)
+					}
+					err4 := customWidget.Invalidate()
+					if err4 != nil {
+						return
+					}
+					if stop == true {
+						break
+					}
+				}
+			}()
+		}
 	}
 	onClickHuman := func() {
 		readOnly := textEnemy.ReadOnly()
@@ -248,7 +218,7 @@ func main() {
 	onClickFire := func() {
 		if textShouldFire.Text() == "true" {
 			fireText = Fire(client, strings.ToUpper(fireLocation.Text()), data, board)
-			err := textView4.SetText(fireText)
+			err := textFireRes.SetText(fireText)
 
 			if err != nil {
 				return
@@ -304,7 +274,7 @@ func main() {
 		if err != nil {
 			return
 		}
-		err = textView4.SetText("")
+		err = textFireRes.SetText("")
 		if err != nil {
 			return
 		}
@@ -313,6 +283,7 @@ func main() {
 		leaveButton.SetVisible(false)
 		checkBox.SetVisible(true)
 		checkBox.SetChecked(false)
+		bodyText.WpBot = true
 		lobbyWindowButton.SetVisible(true)
 		err = textPlayer.SetReadOnly(false)
 		if err != nil {
@@ -337,10 +308,10 @@ func main() {
 		}
 	}
 	onClickShowLobby := func() {
-		lobby(client)
+		lobby(client, lobbyWindow, hsWindow)
 	}
 	onClickCords := func() {
-		shipCords(bodyText, customWidget)
+		shipCords(bodyText, customWidget, cordsWindow)
 	}
 
 	if _, err := (declarative.MainWindow{
@@ -451,7 +422,7 @@ func main() {
 							},
 
 							declarative.TextEdit{
-								AssignTo:      &textView4,
+								AssignTo:      &textFireRes,
 								ReadOnly:      true,
 								StretchFactor: 1},
 							declarative.Composite{

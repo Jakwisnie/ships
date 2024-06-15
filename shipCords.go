@@ -21,7 +21,7 @@ func getNext(char byte) byte {
 	}
 }
 
-func shipCords(text BodyText, widget *CustomWidget) {
+func shipCords(text BodyText, widget *CustomWidget, cordsWindow *walk.MainWindow) {
 	var cords []string = make([]string, 20)
 	var textCords, textFirst4, textLast4, textFirst31, textLast31, textFirst32, textLast32, textFirst21, textLast21, textFirst22, textLast22, textFirst23, textLast23, text11, text12, text13, text14 *walk.TextEdit
 	var cordsButton *walk.PushButton
@@ -102,9 +102,10 @@ func shipCords(text BodyText, widget *CustomWidget) {
 	}
 
 	if _, err := (declarative.MainWindow{
-		Title:  "Koordynaty statków",
-		Size:   declarative.Size{Width: 450, Height: 300},
-		Layout: declarative.VBox{},
+		Title:    "Koordynaty statków",
+		Size:     declarative.Size{Width: 450, Height: 300},
+		AssignTo: &cordsWindow,
+		Layout:   declarative.VBox{},
 		Children: []declarative.Widget{
 			declarative.TextEdit{
 				Text:     "cztero czesciowy ",

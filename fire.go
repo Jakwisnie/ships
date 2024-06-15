@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	gui "github.com/grupawp/warships-lightgui/v2"
+	"io"
 	"log"
 	"net/http"
 )
 
 func Fire(client *http.Client, fireLocation string, data string, board *gui.Board) string {
-	log.Println("Inite Fire")
 	url := "https://go-pjatk-server.fly.dev/api/game/fire"
 
 	var bodyText = []byte(`{"coord": "` + fireLocation + `"}`)
@@ -18,10 +18,14 @@ func Fire(client *http.Client, fireLocation string, data string, board *gui.Boar
 	r.Header.Add("X-Auth-Token", data)
 	resp, err := client.Do(r)
 	if err != nil {
-		log.Println("Error:", err)
-
+		Fire(client, fireLocation, data, board)
 	}
-	log.Println(resp)
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+
+		}
+	}(resp.Body)
 	var result ShootResult
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	if err != nil {
