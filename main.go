@@ -228,8 +228,9 @@ func main() {
 			if fireText == "hit" || fireText == "sunk" {
 				goodShot = goodShot + 1
 				customWidget2.colors[strings.ToUpper(fireLocation.Text())] = green
-			} else {
+			} else if fireText == "miss" {
 				customWidget2.colors[strings.ToUpper(fireLocation.Text())] = red
+			} else {
 			}
 			accuracy := float64(goodShot) / float64(shotCount)
 			accuracyStr := accuracyToString(accuracy)
@@ -355,7 +356,7 @@ func main() {
 							},
 							declarative.PushButton{
 								AssignTo:  &lobbyWindowButton,
-								Text:      "ShowLobby",
+								Text:      "Lobby",
 								OnClicked: onClickShowLobby,
 							}}},
 					declarative.Composite{

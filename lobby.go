@@ -33,7 +33,7 @@ func lobby(client *http.Client, lobbyWindow *walk.MainWindow, hsWindow *walk.Mai
 			},
 			declarative.PushButton{
 				AssignTo:  &highscoreButton,
-				Text:      "Show Highscore",
+				Text:      "Highscore",
 				OnClicked: onClickHighscore,
 			},
 			declarative.PushButton{
